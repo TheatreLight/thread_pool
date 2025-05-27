@@ -72,17 +72,18 @@ public class MephiThreadPoolExecutor implements CustomExecutor {
         log.MEPHI_LOG_INFO("MephiThreadPoolExecutor", "","execute", "the task added in queue");
         boolean isQueueOverflow = queueSize >= 0 && taskQueue.size() == queueSize; // if queueSize <= 0 we decide it is unlimited queue
         if (isQueueOverflow || !taskQueue.offer(command)) {
-            log.MEPHI_LOG_ERROR("MephiThreadPoolExecutor", "execute", "Can't add task to queue.");
-            handler.rejectedExecution(command, this);
+            if (workers.size() < maxPoolSize) {
+                log.MEPHI_LOG_INFO("MephiThreadPoolExecutor", "","execute",
+                        "The base number of workers is not enough, create additional workers.");
+                addWorker();
+            } else {
+                log.MEPHI_LOG_ERROR("MephiThreadPoolExecutor", "execute", "Can't add task to queue.");
+                handler.rejectedExecution(command, this);
+            }
         }
 
         if (workers.size() < corePoolSize) {
             log.MEPHI_LOG_INFO("MephiThreadPoolExecutor", "","execute", "Add the base number of workers.");
-            addWorker();
-        }
-        else if(isQueueOverflow && workers.size() < maxPoolSize) {
-            log.MEPHI_LOG_INFO("MephiThreadPoolExecutor", "","execute",
-                    "The base number of workers is not enough, create additional workers.");
             addWorker();
         }
     }
